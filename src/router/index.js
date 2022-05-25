@@ -1,25 +1,44 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import tokenService from './../services/token.service'
+
+import authLoginView from '../views/auth/LoginView.vue'
+
+import EmployeeIndexView from '../views/employees/IndexView.vue'
 
 const routes = [
-  {
-    path: '/',
+  { 
+    path: '/', 
     name: 'home',
-    component: HomeView
+    redirect: { 
+      name: 'employees.index' 
+    } 
   },
   {
-    path: '/about',
-    name: 'about',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/AboutView.vue')
-  }
+    path: '/auth/login',
+    name: 'auth.login',
+    component: authLoginView,
+    meta: {
+      guest: true,
+    }
+  },
+  {
+    path: '/employees/',
+    name: 'employees.index',
+    component: EmployeeIndexView,
+  },
 ]
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes
 })
+
+router.beforeEach((to, from, next) => {
+  const token = tokenService.getToken();
+
+  if (!to.meta?.guest && !token) next({ name: "auth.login" });
+  else if (to.meta?.guest && token) next({ name: "home" });
+  else next();
+});
 
 export default router
