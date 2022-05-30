@@ -21,6 +21,7 @@
 
       <nav class="d-inline-flex mt-2 mt-md-0 ms-md-auto">
         <router-link to="/employees" class="me-3 py-2 text-dark text-decoration-none">Employees</router-link>
+        <router-link to="/deplacements" class="me-3 py-2 text-dark text-decoration-none">Deplacements</router-link>
         <a class="me-3 py-2 text-dark text-decoration-none" @click.prevent="logout">Logout</a>
       </nav>
     </div>

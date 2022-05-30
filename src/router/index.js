@@ -4,6 +4,7 @@ import tokenService from './../services/token.service'
 import authLoginView from '../views/auth/LoginView.vue'
 
 import EmployeeIndexView from '../views/employees/IndexView.vue'
+import DeplacementIndexView from '../views/deplacements/IndexView.vue'
 
 const routes = [
   { 
@@ -25,6 +26,11 @@ const routes = [
     path: '/employees/',
     name: 'employees.index',
     component: EmployeeIndexView,
+  },
+  {
+    path: '/deplacements/',
+    name: 'deplacements.index',
+    component: DeplacementIndexView,
   },
 ]
 
