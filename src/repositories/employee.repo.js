@@ -6,8 +6,11 @@ const employeeRepo = {
     getAll: () => {
         return http.get(`${baseRoute}`);
     },
+    currentUser: () => {
+        return http.get(`${baseRoute}/currentUser`);
+    },
     get: (employeeId) => {
-        return http.get(`${baseRoute}/${employeeId}`);
+        return http.get(`${baseRoute}/data/${employeeId}`);
     },
     create: (payload) => {
         return http.post(`${baseRoute}`, payload);

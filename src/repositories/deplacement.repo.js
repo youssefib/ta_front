@@ -6,6 +6,9 @@ const deplacementRepo = {
     getAll: () => {
         return http.get(`${baseRoute}`);
     },
+    index_user: () => {
+        return http.get(`${baseRoute}/salarie-deplacement`);
+    },
     get: (deplacementId) => {
         return http.get(`${baseRoute}/${deplacementId}`);
     },
