@@ -7,7 +7,7 @@ const deplacementRepo = {
         return http.get(`${baseRoute}`);
     },
     index_user: () => {
-        return http.get(`${baseRoute}/salarie-deplacement`);
+        return http.get(`${baseRoute}/mes-deplacement`);
     },
     get: (deplacementId) => {
         return http.get(`${baseRoute}/${deplacementId}`);
@@ -20,6 +20,12 @@ const deplacementRepo = {
     },
     delete: (deplacementId) => {
         return http.delete(`${baseRoute}/${deplacementId}`);
+    },
+    print: (payload) => {
+        return http.post(`${baseRoute}/print`,payload);
+    },
+    csv: (payload) => {
+        return http.post(`${baseRoute}/csv`,payload);
     },
 }
 
