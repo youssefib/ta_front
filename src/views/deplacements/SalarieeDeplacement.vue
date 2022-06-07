@@ -221,7 +221,7 @@ const getFiltredDeplacements = () => {
         const after_date = new Date(search.after_date);
         const before_date = new Date(search.before_date);
         if(after_date == 'Invalid Date' && before_date == 'Invalid Date' ){
-            return dep.intitule.toLowerCase().match(search.intitule.toLowerCase()) && dep.imprime == search.printed ;
+            return dep.intitule.toLowerCase().match(search.intitule.toLowerCase()) && dep.imprime != search.printed ;
         }else if(after_date != 'Invalid Date' && before_date == 'Invalid Date'){
             return dep.intitule.toLowerCase().match(search.intitule.toLowerCase()) &&  date >= after_date && dep.imprime == search.printed ;
         }else if(after_date == 'Invalid Date' && before_date != 'Invalid Date'){

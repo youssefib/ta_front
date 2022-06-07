@@ -62,7 +62,7 @@ const hasError = (field) => {
   }
 };
 
-const success = (message = "succés",response) => {
+const success = (message = "succés") => {
   Swal.fire({
     icon: "success",
     text: message,
@@ -71,7 +71,7 @@ const success = (message = "succés",response) => {
       cancelButton: "button is-danger",
     },
     buttonsStyling: false,
-    footer: response
+    // footer: response
 
   });
 };
@@ -233,28 +233,28 @@ const getFiltredDeplacements = () => {
       return (
         fullname.match(search.name.toLowerCase()) &&
         dep.intitule.toLowerCase().match(search.intitule.toLowerCase()) &&
-        dep.imprime == search.printed
+        dep.imprime != search.printed
       );
     } else if (after_date != "Invalid Date" && before_date == "Invalid Date") {
       return (
         fullname.match(search.name.toLowerCase()) &&
         dep.intitule.toLowerCase().match(search.intitule.toLowerCase()) &&
         date >= after_date &&
-        dep.imprime == search.printed
+        dep.imprime != search.printed
       );
     } else if (after_date == "Invalid Date" && before_date != "Invalid Date") {
       return (
         fullname.match(search.name.toLowerCase()) &&
         dep.intitule.toLowerCase().match(search.intitule.toLowerCase()) &&
         date <= before_date &&
-        dep.imprime == search.printed
+        dep.imprime != search.printed
       );
     } else if (after_date != "Invalid Date" && before_date != "Invalid Date") {
       return (
         (fullname.match(search.name.toLowerCase()) &&
           dep.intitule.toLowerCase().match(search.intitule.toLowerCase()) &&
           date >= after_date) ||
-        (date <= before_date && dep.imprime == search.printed)
+        (date <= before_date && dep.imprime != search.printed)
       );
     }
   });
@@ -308,9 +308,15 @@ const printDeplacement = async () => {
       const payload = { ids : selectedDeplacements.value }
       const response = await deplacementRepo.print(payload);
       clearSelected();
-     
-      console.log(response.data)
       success("Les deplacement sont bien imprimer",response.data);
+      const a = document.createElement('a');
+      document.body.appendChild(a);
+      a.download = name;
+      a.href = response.data.url;
+      a.target = "_blank";
+      a.click();
+      a.remove();
+      
 
     
     }else{
@@ -318,7 +324,9 @@ const printDeplacement = async () => {
     }  
 
   }catch (error) {
-    erreur("Merci de choisir une selection valide");
+    const message = error.response?.data?.message ?? 'Merci de choisir une selection valide'
+    erreur(message);
+    clearSelected();
     
   }
 
@@ -327,28 +335,21 @@ const printDeplacement = async () => {
 const supprimerSelection = async () => {
   try {
     if(selectedDeplacements.value.length){
-      // const payload = { ids : selectedDeplacements.value }
-      selectedDeplacements.value .forEach(selectedDeplacement => {
-        const response = deplacementRepo.delete(selectedDeplacement);
-        getDeplacements();
-
-        console.log(response.data);
-      });
+      for (let index = 0; index < selectedDeplacements.value.length; index++) {
+        const response = await deplacementRepo.delete(selectedDeplacements.value[index]);
+        console.log(response);
+      }
+      getDeplacements();
       clearSelected();
-      
       success("Les deplacement sont bien supprimer");
     }else{
       erreur("Merci de sélectionner au moins un déplacement ");
       clearSelected();
-
-
     }  
   }catch (error) {
     console.log(error)
     erreur("Merci de choisir une selection valide");
       clearSelected();
-
-    
   }
 
 }
