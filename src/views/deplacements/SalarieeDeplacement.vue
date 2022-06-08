@@ -1,13 +1,10 @@
 <script setup>
-import { ref,reactive} from 'vue'
+import {ref,reactive} from 'vue'
 import Swal from 'sweetalert2'
-// import { Notyf } from 'notyf';
 
 import employeeRepo from './../../repositories/employee.repo'
 import deplacementRepo from './../../repositories/deplacement.repo'
 import vehiculeRepo from './../../repositories/vehicule.repo'
-
-// const notyf = new Notyf();
 
 const deplacements = ref([]);
 const vehicules = ref([]);
@@ -54,7 +51,7 @@ const hasError = (field) => {
     }
 }
 
-const success = (message = "succés",response) => {
+const success = (message = "succés") => {
   Swal.fire({
     icon: "success",
     text: message,
@@ -63,7 +60,6 @@ const success = (message = "succés",response) => {
       cancelButton: "button is-danger",
     },
     buttonsStyling: false,
-    footer: response
 
   });
 };
@@ -79,6 +75,20 @@ const erreur = (message = "erreur") => {
     buttonsStyling: false,
   });
 };
+
+const confirmation = async (message = 'Êtes-vous sûr?') => {
+    return await Swal.fire({
+        title: message,
+        icon: 'warning',
+        showCancelButton: true,
+        customClass: {
+            confirmButton: 'button is-primary mr-2',
+            cancelButton: 'button is-danger'
+        },
+        buttonsStyling: false,
+        confirmButtonText: 'Continuer'
+    })
+}
 
 
 const submitDeplacement = () => {
@@ -141,6 +151,8 @@ const editDeplacement = (deplac) => {
     deplacement.m_hotel     = deplac.m_hotel
     deplacement.valider     = deplac.valider
     deplacement.imprime     = deplac.imprime
+    deplacement.d_imp = deplac.d_imp;
+    deplacement.print_link = deplac.print_link;
 }
 
 
@@ -235,7 +247,7 @@ const getFiltredDeplacements = () => {
 
 const userFullName = () => {
 
-  return currentUser.value.first_name.concat(currentUser.value.last_name);
+  return `${currentUser.value.first_name} ${currentUser.value.last_name}`;
   
 };
 
@@ -248,8 +260,6 @@ const getVheicules = async () => {
         console.log(error)
     }
 }
-
-
 const getTaux = () => {
     if(deplacement.vehicule_id){
         const vehicule = vehicules.value.find( v => v.id === deplacement.vehicule_id)
@@ -258,16 +268,11 @@ const getTaux = () => {
         }
         return vehicule.taux_km
     }
-
     return 0
-    
 }
-
-
 const isSelected = (deplacement_id) => {
   return selectedDeplacements.value.includes(deplacement_id)
 }
-
 const toggelSelected = (deplacement_id) => {
   const selected = isSelected(deplacement_id)
   if(selected){
@@ -280,20 +285,28 @@ const toggelSelected = (deplacement_id) => {
     selectedDeplacements.value.push(deplacement_id)
   }
 }
-
 const clearSelected =() => {
   selectedDeplacements.value.splice(0,selectedDeplacements.value.length); 
 }
-
 const printDeplacement = async () => {
+  const confirm = await confirmation();
+  if(!confirm.isConfirmed) {
+        return;
+    }
   try {
     if(selectedDeplacements.value.length){
       const payload = { ids : selectedDeplacements.value }
       const response = await deplacementRepo.print(payload);
       clearSelected();
-     
-      console.log(response.data)
       success("Les deplacement sont bien imprimer",response.data);
+      const a = document.createElement('a');
+      document.body.appendChild(a);
+      a.download = name;
+      a.href = response.data.url;
+      a.target = "_blank";
+      a.click();
+      a.remove();
+      
 
     
     }else{
@@ -301,7 +314,9 @@ const printDeplacement = async () => {
     }  
 
   }catch (error) {
-    erreur("Merci de choisir une selection valide");
+    const message = error.response?.data?.message ?? 'Erreur survenue'
+    erreur(message);
+    clearSelected();
     
   }
 
@@ -579,6 +594,11 @@ init()
                 </div>
             </div>
             <div class="modal-footer">
+                <template v-if="deplacement.imprime">
+                    <div class="text-danger me-3" >
+                        <a :href="deplacement.print_link" target="_blank"> Imprimer le {{ deplacement.d_imp }}</a>
+                    </div>
+                </template>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
                 <button 
                     type="button" 

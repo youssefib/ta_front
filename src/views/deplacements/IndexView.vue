@@ -36,7 +36,10 @@ const deplacement = reactive({
   valider: false,
   imprime: 0,
   d_imp: null,
-  salariee: "",
+  print_link: "",
+  export_csv: 0,
+  d_csv: null,
+  cvs_link: "",
 });
 
 const search = reactive({
@@ -45,6 +48,7 @@ const search = reactive({
   before_date: "",
   intitule: "",
   printed: "",
+  exported: "",
 });
 
 
@@ -71,7 +75,6 @@ const success = (message = "succés") => {
       cancelButton: "button is-danger",
     },
     buttonsStyling: false,
-    // footer: response
 
   });
 };
@@ -87,6 +90,20 @@ const erreur = (message = "erreur") => {
     buttonsStyling: false,
   });
 };
+
+const confirmation = async (message = 'Êtes-vous sûr?') => {
+    return await Swal.fire({
+        title: message,
+        icon: 'warning',
+        showCancelButton: true,
+        customClass: {
+            confirmButton: 'button is-primary mr-2',
+            cancelButton: 'button is-danger'
+        },
+        buttonsStyling: false,
+        confirmButtonText: 'Continuer'
+    })
+}
 
 const submitDeplacement = () => {
   if (deplacement.id) {
@@ -115,8 +132,6 @@ const createDeplacement = async () => {
       m_repas: deplacement.m_repas,
       m_hotel: deplacement.m_hotel,
       valider: deplacement.valider,
-      imprime: deplacement.imprime,
-      d_imp: deplacement.d_imp,
     };
 
     const response = await deplacementRepo.create(payload);
@@ -151,6 +166,10 @@ const editDeplacement = (deplac) => {
   deplacement.valider = deplac.valider;
   deplacement.imprime = deplac.imprime;
   deplacement.d_imp = deplac.d_imp;
+  deplacement.print_link = deplac.print_link;
+  deplacement.export_csv = deplac.export_csv;
+  deplacement.d_csv = deplac.d_csv;
+  deplacement.csv_link = deplac.csv_link;
 };
 
 const updateDeplacement = async () => {
@@ -171,8 +190,6 @@ const updateDeplacement = async () => {
       nb_repas: deplacement.nb_repas,
       m_repas: deplacement.m_repas,
       m_hotel: deplacement.m_hotel,
-      valider: deplacement.valider,
-      imprime: deplacement.imprime,
     };
 
     const response = await deplacementRepo.update(deplacement.id, payload);
@@ -223,8 +240,8 @@ const getFiltredDeplacements = () => {
   ) {
     return deplacements.value;
   }
-  const dep = deplacements.value;
-  return dep.filter((dep) => {
+  const deps = deplacements.value;
+  return deps.filter((dep) => {
     const fullname = dep.user.first_name.concat(dep.user.last_name).toLowerCase();
     const date = new Date(dep.date);
     const after_date = new Date(search.after_date);
@@ -240,21 +257,21 @@ const getFiltredDeplacements = () => {
         fullname.match(search.name.toLowerCase()) &&
         dep.intitule.toLowerCase().match(search.intitule.toLowerCase()) &&
         date >= after_date &&
-        dep.imprime != search.printed
+        dep.imprime != search.printed 
       );
     } else if (after_date == "Invalid Date" && before_date != "Invalid Date") {
       return (
         fullname.match(search.name.toLowerCase()) &&
         dep.intitule.toLowerCase().match(search.intitule.toLowerCase()) &&
         date <= before_date &&
-        dep.imprime != search.printed
+        dep.imprime != search.printed 
       );
     } else if (after_date != "Invalid Date" && before_date != "Invalid Date") {
       return (
-        (fullname.match(search.name.toLowerCase()) &&
-          dep.intitule.toLowerCase().match(search.intitule.toLowerCase()) &&
-          date >= after_date) ||
-        (date <= before_date && dep.imprime != search.printed)
+        fullname.match(search.name.toLowerCase()) &&
+          dep.intitule.toLowerCase().match(search.intitule.toLowerCase())  
+          && dep.imprime != search.printed
+          && date >= after_date || date <= before_date
       );
     }
   });
@@ -303,6 +320,10 @@ const clearSelected =() => {
 }
 
 const printDeplacement = async () => {
+  const confirm = await confirmation();
+  if(!confirm.isConfirmed) {
+        return;
+    }
   try {
     if(selectedDeplacements.value.length){
       const payload = { ids : selectedDeplacements.value }
@@ -324,7 +345,7 @@ const printDeplacement = async () => {
     }  
 
   }catch (error) {
-    const message = error.response?.data?.message ?? 'Merci de choisir une selection valide'
+    const message = error.response?.data?.message ?? 'Erreur survenue'
     erreur(message);
     clearSelected();
     
@@ -333,44 +354,66 @@ const printDeplacement = async () => {
 }
 
 const supprimerSelection = async () => {
-  try {
+    var count_err = 0;
+    const confirm = await confirmation();
+        
+    if(!confirm.isConfirmed) {
+        return;
+    }
     if(selectedDeplacements.value.length){
       for (let index = 0; index < selectedDeplacements.value.length; index++) {
-        const response = await deplacementRepo.delete(selectedDeplacements.value[index]);
-        console.log(response);
+        try {
+          const response = await deplacementRepo.delete(selectedDeplacements.value[index]);
+          console.log(response);
+          
+        } catch (error) {
+          count_err = count_err + 1
+        }
+        
+      }
+      
+      const supprimer = selectedDeplacements.value.length - count_err
+      if(!count_err){
+        success("Les deplacement sont bien supprimer");
+      }else if(count_err == selectedDeplacements.value.length ){
+        erreur("Aucun déplacement n'est supprimer!! Impossible de supprimer un déplacement déja valider ")
+      }else{
+        success(count_err + ' non supprimer ' + supprimer + ' supprimer ');
       }
       getDeplacements();
       clearSelected();
-      success("Les deplacement sont bien supprimer");
     }else{
       erreur("Merci de sélectionner au moins un déplacement ");
       clearSelected();
-    }  
-  }catch (error) {
-    console.log(error)
-    erreur("Merci de choisir une selection valide");
-      clearSelected();
-  }
+    }
 
 }
 
 const comptabiliteDeplacement = async () => {
+  const confirm = await confirmation();
+  if(!confirm.isConfirmed) {
+        return;
+    }
   try {
     if(selectedDeplacements.value.length){
       const payload = { ids : selectedDeplacements.value }
-      const response = await deplacementRepo.csv(payload);
+      await deplacementRepo.csv(payload);
       clearSelected();
      
-      console.log(response.data)
-      success("Les deplacement sont bien imprimer",response.data);
+      success("Les deplacement sont bien exporter");
 
     
     }else{
       erreur("Merci de sélectionner au moins un déplacement");
+      clearSelected();
+
     }  
 
   }catch (error) {
-    erreur("Merci de choisir une selection valide");
+    const message = error.response?.data?.message ?? 'Erreur survenue'
+    erreur(message);
+    clearSelected();
+
     
   }
 
@@ -404,7 +447,7 @@ init();
         @click="printDeplacement"
       >
         <i class="bi bi-printer me-2"></i>
-        <span>Imprimer la selction</span>
+        <span>Imprimer la sélection</span>
       </button>
       <button
         type="button"
@@ -427,17 +470,17 @@ init();
     </div>
     <div class="form-outline search-wrapper col-md-12 mb-3">
       <div class="row">
-        <div class="col-md-3 mt-3">
+        <div class="col-md-4 mt-3">
           <input
             type="search"
             id="name_search"
             class="form-control"
-            placeholder="Nome prenom"
+            placeholder="Nom prenom"
             v-model="search.name"
             aria-label="Search"
           />
         </div>
-        <div class="col-md-3 mt-3">
+        <div class="col-md-4 mt-3">
           <label for="before_date">Avent le</label>
           <input
             type="date"
@@ -448,7 +491,7 @@ init();
             aria-label="Search"
           />
         </div>
-        <div class="col-md-3 mt-3">
+        <div class="col-md-4 mt-3">
           <label for="after_date">après le</label>
           <input
             type="date"
@@ -459,7 +502,7 @@ init();
             aria-label="Search"
           />
         </div>
-        <div class="col-md-3 mt-3">
+        <div class="col-md-4 mt-3">
           <input
             type="search"
             id="intitule"
@@ -469,9 +512,13 @@ init();
             aria-label="Search"
           />
         </div>
-        <div class="col-md-3 mt-3">
+        <div class="col-md-4 mt-3">
           <input type="checkbox" id="printed" name="printed" v-model="search.printed" />
           <label for="printed">Seulement les non imprimer</label>
+        </div>
+         <div class="col-md-4 mt-3">
+          <input type="checkbox" id="exported" name="exported" v-model="search.exported" />
+          <label for="exported">Seulement les non comptabiliser</label>
         </div>
       </div>
     </div>
@@ -717,9 +764,17 @@ init();
           </div>
         </div>
         <div class="modal-footer">
-          <div class="text-danger me-3" v-if="deplacement.imprime">
-            Imprimer le {{ deplacement.d_imp }}
-          </div>
+          <template v-if="deplacement.imprime">
+              <div class="text-danger me-3" >
+                <a :href="deplacement.print_link" target="_blank"> Imprimer le {{ deplacement.d_imp }}</a>
+              </div>
+          </template>
+          <template v-if="deplacement.export_csv">
+              <div class="text-danger me-3" >
+                  <a :href="deplacement.csv_link" target="_blank"> exporter le {{ deplacement.d_csv }}</a>
+              </div>
+          </template>
+          
           <template v-if="deplacement.valider">
             <input
               class="form-check-input"

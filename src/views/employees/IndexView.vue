@@ -176,7 +176,6 @@ const handleFileSelect = (event) => {
 }
 
 const importData = async () => {
-    // let count = 0;
 
     for(const employee of fileData.value) {
         try {
